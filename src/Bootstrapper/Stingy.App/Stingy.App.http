@@ -1,0 +1,6 @@
+@Stingy.App_HostAddress = http://localhost:5143
+
+GET {{Stingy.App_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
