@@ -71,15 +71,8 @@ app.UseRouting();
 // app.UseAuthorization();
 
 // app.UseModules();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/");
 // app.MapControllers();
 // app.MapHub<RetroHub>("/hubs");
-
-app.MapGet("/", () =>
-{
-    var keyVault = builder.Configuration["KeyVault"];
-	var sentry = builder.Configuration["Sentry:Dsn"]; 
-    return $"App is running in {builder.Environment.EnvironmentName} mode. KeyVault: {keyVault}, sentry: {sentry}";
-});
 
 app.Run();
