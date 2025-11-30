@@ -1,41 +1,85 @@
+// using Retrospectacle.Bootstrapper.DI;
+// using Sentry.Extensibility;
+// using Retro.Core.Hubs;
+
+using Azure.Identity;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+if (builder.Environment.IsDevelopment())
+    builder.Configuration.AddUserSecrets<Program>();
+
+var keyVaultUrl = builder.Configuration["KeyVault"];
+var c = builder.Environment.IsDevelopment();
+builder.Configuration.AddAzureKeyVault(
+    new Uri(keyVaultUrl),
+    new DefaultAzureCredential());
+
+// builder.WebHost.UseSentry(o =>
+// {
+//     o.Dsn = builder.Configuration["Sentry:Dsn"];
+//     o.Debug = builder.Environment.IsDevelopment();
+//     o.TracesSampleRate = 1.0;
+//     o.AttachStacktrace = true;
+//     o.SendDefaultPii = true;
+//     o.MaxRequestBodySize = RequestSize.Always;
+//     o.MinimumBreadcrumbLevel = LogLevel.Debug;
+//     o.MinimumEventLevel = LogLevel.Warning;
+//     o.DiagnosticLevel = SentryLevel.Error;
+// });
+
+// builder.Services.AddAuthorization();
+builder.Services.AddHealthChecks();
+builder.Services.AddSignalR();
+// builder.RegisterModules();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevCors", corsBuilder =>
+    {
+        corsBuilder.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+    options.AddPolicy("ProdCors", corsBuilder =>
+    {
+        corsBuilder.WithOrigins("")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseCors("DevCors");
+}
+else
+{
+    app.UseHttpsRedirection();
+    app.UseCors("ProdCors");
 }
 
-app.UseHttpsRedirection();
+app.UseRouting();
+// app.UseAuthentication();
+// app.UseAuthorization();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// app.UseModules();
+app.MapHealthChecks("/health");
+// app.MapControllers();
+// app.MapHub<RetroHub>("/hubs");
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var keyVault = builder.Configuration["KeyVault"];
+	var sentry = builder.Configuration["Sentry:Dsn"]; 
+    return $"App is running in {builder.Environment.EnvironmentName} mode. KeyVault: {keyVault}, sentry: {sentry}";
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
