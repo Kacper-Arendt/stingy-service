@@ -1,7 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core app to Azure Web App - stingy
+name: Build and deploy stingy-app
 
 on:
   push:
@@ -11,23 +8,24 @@ on:
 
 jobs:
   build:
+#    runs-on: self-hosted
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5.0.1
         with:
-          dotnet-version: '10.x'
+          dotnet-version: "10.x"
 
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build --configuration Release src/Bootstrapper/Stingy.App/Stingy.App.csproj
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: dotnet publish (Bootstrapper only)
+        run: dotnet publish src/Bootstrapper/Stingy.App/Stingy.App.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -37,7 +35,9 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+#    runs-on: self-hosted
     needs: build
+
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
@@ -47,7 +47,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+          path: ${{ github.workspace }}/myapp
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -59,7 +60,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'stingy'
-          slot-name: 'Production'
-          package: .
-          
+          app-name: "stingy-app"
+          slot-name: "Production"
+          package: ${{ github.workspace }}/myapp
+          startup-command: "dotnet Stingy.App.dll"
