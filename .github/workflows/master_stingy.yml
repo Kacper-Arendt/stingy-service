@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-#    runs-on: self-hosted
+    #    runs-on: self-hosted
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,7 +35,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-#    runs-on: self-hosted
+    #    runs-on: self-hosted
     needs: build
 
     permissions:
@@ -60,7 +60,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "stingy-app"
+          app-name: "stingy"
           slot-name: "Production"
           package: ${{ github.workspace }}/myapp
           startup-command: "dotnet Stingy.App.dll"
