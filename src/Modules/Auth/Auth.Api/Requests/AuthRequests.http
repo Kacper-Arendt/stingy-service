@@ -1,0 +1,24 @@
+@url = http://localhost:5145/api
+
+### POST Register user
+POST {{url}}/Auth/Register
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "Test123!"
+}
+ 
+### POST Login user
+POST {{url}}/auth/identity/Login?useCookies=true
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "Test123!"
+}
+
+### Get user
+GET {{url}}/Auth/me
+#Authorization: Bearer CfDJ8J34dda5mBBGrdKKCunDkmwyEdaj1jduuljW8X9xGqsfVGlnp1uEdE8b4nRu0BuuEp6OHGFLEWYTNBOf-cvjwGeLPdAr6eW5X7O1Zf97uAH0krPrppstyb5zW5qmX2sf1LEA1Y6nlNu_iaGHyXD1ghDtIQQRVhphPNmLzDoyjhIFFn6luvXvOpdcmkMJQlt5dEhLFzVav0BpMQ8fEcVBgOO5W9KYp3QdOFvIN791P3o0yeHaGJYMWc4XdjR3znhAwqhQT9ekcAIG4vqvv036e7QhB3wdAyHxAnKNBPTNCFpao668NgcjOvQ_Rsy2VBws7NEevlzprnSZbYIujkScxkM_kUsn8yMxAXOWp42SKdlrk8sjYZwVi8mtVEccnPy5igcGno5kJo8_CRPC8tcyilH0uTIoxw42nbRPbbbzH9PNkwMESUecu5f51oeCkv0CtzHmykHLfQLR2KYfqH_5rNEWl3GlfBRr-4uWts8vikYmVfnO3Lgo7faM8quqbrUGK9eOSUYS3vz5Vl_H7YxMell8CaTkL1LWzJGaIiy44Vc22XWrmItzPXIcN391xxz6juaBKF2oAvbVfJJNbq8VwUmpW6bGPgv2n88iP8ehNWOzoNdN1KJOE2aHhYxwDZO-AjO1yI9Mn4RdZ1glm7jEgUSyLHoxmLo4SZ-T45f8wa9gdGrU8UPePvL_8SmP942Qvg
+

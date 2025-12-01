@@ -1,8 +1,6 @@
-// using Retrospectacle.Bootstrapper.DI;
-// using Sentry.Extensibility;
-// using Retro.Core.Hubs;
-
 using Azure.Identity;
+using Sentry.Extensibility;
+using Stingy.App.DI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,24 +16,24 @@ builder.Configuration.AddAzureKeyVault(
     new Uri(keyVaultUrl),
     new DefaultAzureCredential());
 
-// builder.WebHost.UseSentry(o =>
-// {
-//     o.Dsn = builder.Configuration["Sentry:Dsn"];
-//     o.Debug = builder.Environment.IsDevelopment();
-//     o.TracesSampleRate = 1.0;
-//     o.AttachStacktrace = true;
-//     o.SendDefaultPii = true;
-//     o.MaxRequestBodySize = RequestSize.Always;
-//     o.MinimumBreadcrumbLevel = LogLevel.Debug;
-//     o.MinimumEventLevel = LogLevel.Warning;
-//     o.DiagnosticLevel = SentryLevel.Error;
-// });
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = builder.Configuration["Sentry:Dsn"];
+    o.Debug = builder.Environment.IsDevelopment();
+    o.TracesSampleRate = 1.0;
+    o.AttachStacktrace = true;
+    o.SendDefaultPii = true;
+    o.MaxRequestBodySize = RequestSize.Always;
+    o.MinimumBreadcrumbLevel = LogLevel.Debug;
+    o.MinimumEventLevel = LogLevel.Warning;
+    o.DiagnosticLevel = SentryLevel.Error;
+});
 
-// builder.Services.AddAuthorization();
+builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
 builder.Services.AddSignalR();
-// builder.RegisterModules();
-
+builder.RegisterModules();
+    
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", corsBuilder =>
@@ -67,12 +65,12 @@ else
 }
 
 app.UseRouting();
-// app.UseAuthentication();
-// app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization();
 
 // app.UseModules();
 app.MapHealthChecks("/");
-// app.MapControllers();
+app.MapControllers();
 // app.MapHub<RetroHub>("/hubs");
 
 app.Run();
