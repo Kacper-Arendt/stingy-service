@@ -1,11 +1,11 @@
-@url = http://localhost:5145/api
+@url = http://localhost:5143/api
 
 ### POST Register user
 POST {{url}}/Auth/Register
 Content-Type: application/json
 
 {
-  "email": "test@test.com",
+  "email": "test1@test.com",
   "password": "Test123!"
 }
  
@@ -14,7 +14,7 @@ POST {{url}}/auth/identity/Login?useCookies=true
 Content-Type: application/json
 
 {
-  "email": "test@test.com",
+  "email": "test1@test.com",
   "password": "Test123!"
 }
 
