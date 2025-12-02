@@ -11,7 +11,6 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>();
 
 var keyVaultUrl = builder.Configuration["KeyVault"];
-var c = builder.Environment.IsDevelopment();
 builder.Configuration.AddAzureKeyVault(
     new Uri(keyVaultUrl),
     new DefaultAzureCredential());
@@ -68,9 +67,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// app.UseModules();
+app.UseModules();
 app.MapHealthChecks("/");
-app.MapControllers();
 // app.MapHub<RetroHub>("/hubs");
 
 app.Run();

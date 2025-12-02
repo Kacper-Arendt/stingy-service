@@ -1,3 +1,4 @@
+using Auth.Api.Endpoints;
 using Auth.Core;
 using Auth.Core.Database;
 using Auth.Core.Entities;
@@ -52,6 +53,10 @@ public static class UsersModule
         app
             .MapGroup("api/auth/identity")
             .MapIdentityApi<User>();
+
+        app
+            .MapGroup("api/auth")
+            .MapAuthEndpoints();
 
         return app;
     }
