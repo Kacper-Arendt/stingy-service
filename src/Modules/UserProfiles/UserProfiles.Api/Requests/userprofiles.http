@@ -1,0 +1,153 @@
+### UserProfiles API Requests
+
+@baseUrl = http://localhost:5145
+@token = your_jwt_token_here
+
+### Register and login first via Auth module
+POST {{baseUrl}}/api/auth/Register
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "TestPass123!"
+}
+
+### Login to get token
+POST {{baseUrl}}/api/auth/identity/login
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "TestPass123!"
+}
+
+### Create my profile
+POST {{baseUrl}}/api/profiles/me
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "John Doe",
+    "bio": "Product Manager passionate about retrospectives"
+}
+
+### Get my profile
+GET {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+
+### Update my profile
+PUT {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "John Doe Updated",
+    "profileImageUrl": "https://example.com/new-avatar.jpg",
+    "bio": "Senior Product Manager passionate about retrospectives and team dynamics",
+    "timeZone": "Europe/Warsaw",
+    "visibility": 1
+}
+
+
+
+
+
+### Get another user's public profile (replace with actual user ID)
+GET {{baseUrl}}/api/profiles/550e8400-e29b-41d4-a716-446655440000/public
+Authorization: Bearer {{token}}
+
+
+
+### Test profile visibility levels
+
+# Create profile with PUBLIC visibility (default)
+POST {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Public User",
+    "bio": "This profile is public",
+    "visibility": 0
+}
+
+# Create profile with LIMITED visibility
+PUT {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Limited User",
+    "bio": "Only basic info visible to others",
+    "visibility": 1
+}
+
+# Create profile with PRIVATE visibility
+PUT {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Private User",
+    "bio": "This profile is private",
+    "visibility": 2
+}
+
+### Test default avatar generation
+POST {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Avatar Test",
+    "bio": "Testing avatar generation"
+}
+
+### Test timezone functionality
+PUT {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Timezone User",
+    "timeZone": "America/New_York"
+}
+
+### Test custom profile image vs default avatar
+PUT {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Custom Avatar",
+    "profileImageUrl": "https://example.com/custom-avatar.png"
+}
+
+### Remove custom image (back to default)
+PUT {{baseUrl}}/api/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "displayName": "Back to Default",
+    "profileImageUrl": null
+}
+
+### Upload profile image (multipart/form-data)
+POST {{baseUrl}}/api/profiles/me/image
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/your/image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Delete profile image
+DELETE {{baseUrl}}/api/profiles/me/image
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+"https://budgetstor.blob.core.windows.net/profile-images/550e8400-e29b-41d4-a716-446655440000.jpg"

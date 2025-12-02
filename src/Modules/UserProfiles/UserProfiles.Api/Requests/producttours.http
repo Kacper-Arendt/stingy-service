@@ -1,0 +1,68 @@
+### Product Tour API Requests
+
+@baseUrl = http://localhost:5145
+@token = your_jwt_token_here
+
+### Login to get token (use Auth module)
+POST {{baseUrl}}/api/auth/identity/login
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "TestPass123!"
+}
+
+### Set tour status to Todo
+POST {{baseUrl}}/api/profiles/me/tours
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tourKey": "onboarding-tour",
+    "status": 0
+}
+
+### Set tour status to Done
+POST {{baseUrl}}/api/profiles/me/tours
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tourKey": "dashboard-tour",
+    "status": 1
+}
+
+### Set tour status to Closed
+POST {{baseUrl}}/api/profiles/me/tours
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tourKey": "features-tour",
+    "status": 2
+}
+
+### Update existing tour status (Done)
+POST {{baseUrl}}/api/profiles/me/tours
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tourKey": "onboarding-tour",
+    "status": 1
+}
+
+### Get all tour statuses for current user
+GET {{baseUrl}}/api/profiles/me/tours
+Authorization: Bearer {{token}}
+
+### Examples of tour keys
+# "onboarding-tour" - Initial onboarding walkthrough
+# "dashboard-tour" - Dashboard features tour
+# "retro-creation-tour" - Retrospective creation guide
+# "team-management-tour" - Team management features
+
+### Status values:
+# 0 = Done - User completed the tour
+# 1 = Closed - User dismissed the tour without completing
+
