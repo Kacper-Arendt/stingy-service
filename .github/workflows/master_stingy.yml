@@ -21,17 +21,91 @@ jobs:
         with:
           dotnet-version: "10.x"
 
+      - name: Restore dependencies
+        id: restore
+        run: |
+          echo "::group::Restore dependencies"
+          START_TIME=$(date +%s)
+          dotnet restore src/Bootstrapper/Stingy.App/Stingy.App.csproj
+          END_TIME=$(date +%s)
+          RESTORE_DURATION=$((END_TIME - START_TIME))
+          echo "restore_duration=$RESTORE_DURATION" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+
       - name: Build with dotnet
-        run: dotnet build --configuration Release src/Bootstrapper/Stingy.App/Stingy.App.csproj
+        id: build
+        run: |
+          echo "::group::Build solution"
+          START_TIME=$(date +%s.%N)
+          dotnet build --configuration Release src/Bootstrapper/Stingy.App/Stingy.App.csproj --no-restore
+          BUILD_EXIT_CODE=$?
+          END_TIME=$(date +%s.%N)
+          BUILD_DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+          echo "build_duration=$BUILD_DURATION" >> $GITHUB_OUTPUT
+          echo "build_exit_code=$BUILD_EXIT_CODE" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          exit $BUILD_EXIT_CODE
 
       - name: dotnet publish (Bootstrapper only)
         run: dotnet publish src/Bootstrapper/Stingy.App/Stingy.App.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+
+      - name: Generate build time report
+        id: build_time_report
+        if: always()
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq bc
+
+          RESTORE_TIME=${{ steps.restore.outputs.restore_duration }}
+          BUILD_TIME=${{ steps.build.outputs.build_duration }}
+          TOTAL_TIME=$(echo "$RESTORE_TIME + $BUILD_TIME" | bc)
+
+          jq -n \
+            --arg run_id "${{ github.run_id }}" \
+            --arg run_number "${{ github.run_number }}" \
+            --arg commit_sha "${{ github.sha }}" \
+            --arg branch "${{ github.ref_name }}" \
+            --arg event "${{ github.event_name }}" \
+            --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson restore_time "$RESTORE_TIME" \
+            --argjson build_time "$BUILD_TIME" \
+            --argjson total_time "$TOTAL_TIME" \
+            --arg status "${{ job.status }}" \
+            '{
+              workflow_run_id: $run_id,
+              workflow_run_number: $run_number,
+              commit_sha: $commit_sha,
+              branch: $branch,
+              triggered_by: $event,
+              timestamp: $timestamp,
+              times: {
+                restore_seconds: $restore_time,
+                build_seconds: $build_time,
+                total_seconds: $total_time
+              },
+              formatted: {
+                restore: ($restore_time | tostring | . + "s"),
+                build: ($build_time | tostring | . + "s"),
+                total: ($total_time | tostring | . + "s")
+              },
+              status: $status
+            }' > build-time-report.json
+
+          cat build-time-report.json
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
           path: ${{env.DOTNET_ROOT}}/myapp
+
+      - name: Upload build time report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-time-report
+          path: build-time-report.json
+          retention-days: 90
+          if-no-files-found: ignore
 
   deploy:
     runs-on: ubuntu-latest
