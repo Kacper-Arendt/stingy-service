@@ -10,10 +10,15 @@ on:
 jobs:
   track-build-time:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -160,38 +165,185 @@ jobs:
 
           echo "::endgroup::"
 
-          
-
-      - name: Download previous build times
-        id: download_previous
+      - name: Read previous build stats from README
+        id: read_stats
         if: always()
         continue-on-error: true
         run: |
-          echo "::group::Download previous build times"
+          echo "::group::Read previous build stats from README"
 
-          # Try to download previous build time report from artifacts
-          # This is a placeholder - you might want to use GitHub API or artifacts
-          PREVIOUS_EXISTS=false
+          sudo apt-get update && sudo apt-get install -y jq bc
 
-          # Check if we can get previous run data
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "PR build - comparing with base branch"
-            PREVIOUS_EXISTS=false
+          if [ -f README.md ]; then
+            # Extract stats from README using sed
+            STATS_SECTION=$(sed -n '/<!-- BUILD_TIME_STATS_START -->/,/<!-- BUILD_TIME_STATS_END -->/p' README.md)
+            
+            # Extract values using awk - more reliable for table parsing
+            LAST_BUILD=$(echo "$STATS_SECTION" | awk -F'|' '/Last Build/ {gsub(/[ \t*✅⚠️]/, "", $3); print $3}' | xargs || echo "")
+            FIRST_BUILD=$(echo "$STATS_SECTION" | awk -F'|' '/First Build/ {gsub(/[ \t*]/, "", $3); print $3}' | xargs || echo "")
+            MAX_PREFERRED=$(echo "$STATS_SECTION" | awk -F'|' '/Max Preferred/ {gsub(/[ \t*]/, "", $3); print $3}' | xargs || echo "120")
+            AVG_BUILD=$(echo "$STATS_SECTION" | awk -F'|' '/Average/ {gsub(/[ \t*]/, "", $3); print $3}' | xargs || echo "")
+            
+            # Clean up values - remove underscores and emojis
+            LAST_BUILD=$(echo "$LAST_BUILD" | sed 's/_//g' | sed 's/✅//g' | sed 's/⚠️//g' | xargs)
+            FIRST_BUILD=$(echo "$FIRST_BUILD" | sed 's/_//g' | xargs)
+            AVG_BUILD=$(echo "$AVG_BUILD" | sed 's/_//g' | xargs)
+            
+            echo "last_build=$LAST_BUILD" >> $GITHUB_OUTPUT
+            echo "first_build=$FIRST_BUILD" >> $GITHUB_OUTPUT
+            echo "max_preferred=$MAX_PREFERRED" >> $GITHUB_OUTPUT
+            echo "avg_build=$AVG_BUILD" >> $GITHUB_OUTPUT
+            
+            echo "Found previous stats:"
+            echo "  Last Build: $LAST_BUILD"
+            echo "  First Build: $FIRST_BUILD"
+            echo "  Max Preferred: $MAX_PREFERRED"
+            echo "  Average: $AVG_BUILD"
           else
-            echo "Push build - will compare with previous runs"
-            PREVIOUS_EXISTS=false
+            echo "README.md not found, will create new stats"
+            echo "last_build=" >> $GITHUB_OUTPUT
+            echo "first_build=" >> $GITHUB_OUTPUT
+            echo "max_preferred=120" >> $GITHUB_OUTPUT
+            echo "avg_build=" >> $GITHUB_OUTPUT
           fi
 
-          echo "previous_exists=$PREVIOUS_EXISTS" >> $GITHUB_OUTPUT
           echo "::endgroup::"
 
-      - name: Compare with previous build
-        id: compare
-        if: always() && steps.download_previous.outputs.previous_exists == 'true'
+      - name: Calculate build statistics
+        id: calc_stats
+        if: always() && steps.build.outputs.build_exit_code == '0'
         run: |
-          echo "::group::Compare with previous build"
-          echo "Comparison logic would go here"
+          echo "::group::Calculate build statistics"
+
+          sudo apt-get update && sudo apt-get install -y jq bc
+
+          RESTORE_TIME=${{ steps.restore.outputs.restore_duration }}
+          BUILD_TIME=${{ steps.build.outputs.build_duration }}
+          CURRENT_TOTAL=$(echo "$RESTORE_TIME + $BUILD_TIME" | bc)
+
+          # Get previous stats
+          PREV_LAST="${{ steps.read_stats.outputs.last_build }}"
+          PREV_FIRST="${{ steps.read_stats.outputs.first_build }}"
+          MAX_PREF="${{ steps.read_stats.outputs.max_preferred }}"
+          PREV_AVG="${{ steps.read_stats.outputs.avg_build }}"
+
+          # Calculate new stats
+          NEW_LAST="${CURRENT_TOTAL}s"
+
+          # First build is current if not set
+          if [ -z "$PREV_FIRST" ] || [ "$PREV_FIRST" == "Not yet measured" ]; then
+            NEW_FIRST="${CURRENT_TOTAL}s"
+          else
+            NEW_FIRST="$PREV_FIRST"
+          fi
+
+          # Calculate average (simple: if we have previous avg, use it; otherwise use current)
+          # For a better average, you'd need to store all build times
+          if [ -z "$PREV_AVG" ] || [ "$PREV_AVG" == "Not yet measured" ]; then
+            NEW_AVG="${CURRENT_TOTAL}s"
+          else
+            # Simple average: (prev_avg + current) / 2
+            PREV_AVG_NUM=$(echo "$PREV_AVG" | sed 's/s//')
+            NEW_AVG_NUM=$(echo "scale=2; ($PREV_AVG_NUM + $CURRENT_TOTAL) / 2" | bc)
+            NEW_AVG="${NEW_AVG_NUM}s"
+          fi
+
+          echo "last_build=$NEW_LAST" >> $GITHUB_OUTPUT
+          echo "first_build=$NEW_FIRST" >> $GITHUB_OUTPUT
+          echo "max_preferred=$MAX_PREF" >> $GITHUB_OUTPUT
+          echo "avg_build=$NEW_AVG" >> $GITHUB_OUTPUT
+          echo "current_total=$CURRENT_TOTAL" >> $GITHUB_OUTPUT
+
+          echo "New statistics:"
+          echo "  Last Build: $NEW_LAST"
+          echo "  First Build: $NEW_FIRST"
+          echo "  Max Preferred: $MAX_PREF"
+          echo "  Average: $NEW_AVG"
+
           echo "::endgroup::"
+
+      - name: Update README with build statistics
+        id: update_readme
+        if: always() && steps.build.outputs.build_exit_code == '0' && github.event_name != 'pull_request'
+        run: |
+          echo "::group::Update README with build statistics"
+
+          sudo apt-get update && sudo apt-get install -y jq bc
+
+          LAST_BUILD="${{ steps.calc_stats.outputs.last_build }}"
+          FIRST_BUILD="${{ steps.calc_stats.outputs.first_build }}"
+          MAX_PREF="${{ steps.calc_stats.outputs.max_preferred }}"
+          AVG_BUILD="${{ steps.calc_stats.outputs.avg_build }}"
+          CURRENT_TOTAL="${{ steps.calc_stats.outputs.current_total }}"
+
+          # Determine status emoji based on comparison with max preferred
+          MAX_PREF_NUM=$(echo "$MAX_PREF" | sed 's/s//')
+          if (( $(echo "$CURRENT_TOTAL <= $MAX_PREF_NUM" | bc -l) )); then
+            STATUS_EMOJI="✅"
+          else
+            STATUS_EMOJI="⚠️"
+          fi
+
+          # Create new stats section using printf to avoid heredoc issues
+          {
+            echo "<!-- BUILD_TIME_STATS_START -->"
+            echo "## ⏱️ Build Time Statistics"
+            echo ""
+            echo "| Metric | Duration |"
+            echo "|--------|----------|"
+            echo "| **Last Build** | ${LAST_BUILD} ${STATUS_EMOJI} |"
+            echo "| **First Build** | ${FIRST_BUILD} |"
+            echo "| **Max Preferred** | ${MAX_PREF} |"
+            echo "| **Average** | ${AVG_BUILD} |"
+            echo ""
+            echo "_Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")_"
+            echo "<!-- BUILD_TIME_STATS_END -->"
+          } > new_stats_section.txt
+
+          # Update README
+          if [ -f README.md ]; then
+            # Create temp file with everything before stats section
+            sed '/<!-- BUILD_TIME_STATS_START -->/,$d' README.md > README_temp.md
+            
+            # Append new stats section
+            cat new_stats_section.txt >> README_temp.md
+            
+            # Append everything after stats section
+            sed -n '/<!-- BUILD_TIME_STATS_END -->/,$p' README.md | tail -n +2 >> README_temp.md
+            
+            # Replace original with updated version
+            mv README_temp.md README.md
+            echo "README.md updated successfully"
+          else
+            echo "README.md not found, creating it"
+            cat new_stats_section.txt > README.md
+          fi
+
+          rm -f new_stats_section.txt
+
+          echo "::endgroup::"
+
+      - name: Commit updated README
+        if: always() && steps.update_readme.outcome == 'success' && github.event_name != 'pull_request'
+        run: |
+          echo "::group::Commit updated README"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add README.md
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "📊 Update build time statistics [skip ci]"
+            git push
+            echo "README.md updated and committed"
+          fi
+
+          echo "::endgroup::"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create build time summary
         if: always()
