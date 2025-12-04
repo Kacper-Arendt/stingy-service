@@ -1,0 +1,274 @@
+name: Build Time Tracking
+
+on:
+    push:
+        branches: [master, main, develop]
+    pull_request:
+        branches: [master, main, develop]
+    workflow_dispatch:
+
+jobs:
+    track-build-time:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "10.0.x"
+
+            - name: Install MSBuild Binary Logger
+              run: |
+                  dotnet tool install -g MSBuildLog.StructuredLogger
+
+            - name: Restore dependencies
+              id: restore
+              run: |
+                  echo "::group::Restore dependencies"
+                  START_TIME=$(date +%s)
+                  dotnet restore stingy-service.sln
+                  END_TIME=$(date +%s)
+                  RESTORE_DURATION=$((END_TIME - START_TIME))
+                  echo "restore_duration=$RESTORE_DURATION" >> $GITHUB_OUTPUT
+                  echo "::endgroup::"
+
+            - name: Build solution with timing
+              id: build
+              run: |
+                  echo "::group::Build solution"
+                  START_TIME=$(date +%s.%N)
+                  dotnet build stingy-service.sln --configuration Release --no-restore -v:minimal /bl:build.binlog
+                  BUILD_EXIT_CODE=$?
+                  END_TIME=$(date +%s.%N)
+                  BUILD_DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+                  echo "build_duration=$BUILD_DURATION" >> $GITHUB_OUTPUT
+                  echo "build_exit_code=$BUILD_EXIT_CODE" >> $GITHUB_OUTPUT
+                  echo "::endgroup::"
+                  exit $BUILD_EXIT_CODE
+
+            - name: Analyze individual project build times
+              id: analyze_projects
+              if: always()
+              run: |
+                  echo "::group::Analyze individual project build times"
+
+                  # Install required tools
+                  sudo apt-get update && sudo apt-get install -y bc jq
+
+                  # Extract project list from solution
+                  PROJECTS=$(dotnet sln list stingy-service.sln | grep "\.csproj$" | sed 's/^[[:space:]]*//' | sed 's|\\|/|g')
+
+                  # Build with detailed output to capture project build times
+                  # We'll use a simpler approach: parse the build output or use MSBuild timing
+                  echo "{" > project-times.json
+                  echo "  \"projects\": [" >> project-times.json
+
+                  FIRST=true
+                  while IFS= read -r project; do
+                    if [ -z "$project" ]; then
+                      continue
+                    fi
+                    
+                    if [ "$FIRST" = false ]; then
+                      echo "," >> project-times.json
+                    fi
+                    FIRST=false
+                    
+                    PROJECT_NAME=$(basename "$project" .csproj)
+                    
+                    # Measure build time for this specific project
+                    # Note: This builds the project with its dependencies, so times may overlap
+                    # For more accurate per-project times, you'd need to parse the MSBuild binlog
+                    START=$(date +%s.%N)
+                    dotnet build "$project" --configuration Release --no-restore -v:quiet -nologo 2>&1 > /dev/null || true
+                    END=$(date +%s.%N)
+                    DURATION=$(echo "$END - $START" | bc)
+                    
+                    echo "    {" >> project-times.json
+                    echo "      \"name\": \"$PROJECT_NAME\"," >> project-times.json
+                    echo "      \"path\": \"$project\"," >> project-times.json
+                    echo "      \"duration_seconds\": $DURATION," >> project-times.json
+                    echo "      \"duration_formatted\": \"$(printf '%.2f' $DURATION)s\"" >> project-times.json
+                    echo "    }" >> project-times.json
+                    
+                    echo "  Measured $PROJECT_NAME: $(printf '%.2f' $DURATION)s"
+                  done <<< "$PROJECTS"
+
+                  echo "  ]" >> project-times.json
+                  echo "}" >> project-times.json
+
+                  echo ""
+                  echo "Project build times extracted (sorted by duration):"
+                  jq -r '.projects | sort_by(.duration_seconds) | reverse | .[] | "\(.name): \(.duration_formatted)"' project-times.json
+
+                  echo "::endgroup::"
+
+            - name: Generate build time report
+              id: report
+              if: always()
+              run: |
+                  echo "::group::Generate build time report"
+
+                  # Install jq if not already installed
+                  sudo apt-get update && sudo apt-get install -y jq bc
+
+                  # Merge project times into main report
+                  if [ -f project-times.json ]; then
+                    PROJECT_TIMES=$(cat project-times.json)
+                  else
+                    PROJECT_TIMES='{"projects": []}'
+                  fi
+
+                  RESTORE_TIME=${{ steps.restore.outputs.restore_duration }}
+                  BUILD_TIME=${{ steps.build.outputs.build_duration }}
+                  TOTAL_TIME=$(echo "$RESTORE_TIME + $BUILD_TIME" | bc)
+
+                  # Create comprehensive JSON report
+                  jq -n \
+                    --arg run_id "${{ github.run_id }}" \
+                    --arg run_number "${{ github.run_number }}" \
+                    --arg commit_sha "${{ github.sha }}" \
+                    --arg branch "${{ github.ref_name }}" \
+                    --arg event "${{ github.event_name }}" \
+                    --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --argjson restore_time "$RESTORE_TIME" \
+                    --argjson build_time "$BUILD_TIME" \
+                    --argjson total_time "$TOTAL_TIME" \
+                    --arg status "${{ job.status }}" \
+                    --argjson project_times "$PROJECT_TIMES" \
+                    '{
+                      workflow_run_id: $run_id,
+                      workflow_run_number: $run_number,
+                      commit_sha: $commit_sha,
+                      branch: $branch,
+                      triggered_by: $event,
+                      timestamp: $timestamp,
+                      times: {
+                        restore_seconds: $restore_time,
+                        build_seconds: $build_time,
+                        total_seconds: $total_time
+                      },
+                      formatted: {
+                        restore: ($restore_time | tostring | . + "s"),
+                        build: ($build_time | tostring | . + "s"),
+                        total: ($total_time | tostring | . + "s")
+                      },
+                      project_times: $project_times,
+                      status: $status
+                    }' > build-time-report.json
+
+                  cat build-time-report.json
+
+                  echo "::endgroup::"
+
+            - name: Download previous build times
+              id: download_previous
+              if: always()
+              continue-on-error: true
+              run: |
+                  echo "::group::Download previous build times"
+
+                  # Try to download previous build time report from artifacts
+                  # This is a placeholder - you might want to use GitHub API or artifacts
+                  PREVIOUS_EXISTS=false
+
+                  # Check if we can get previous run data
+                  if [ "${{ github.event_name }}" == "pull_request" ]; then
+                    echo "PR build - comparing with base branch"
+                    PREVIOUS_EXISTS=false
+                  else
+                    echo "Push build - will compare with previous runs"
+                    PREVIOUS_EXISTS=false
+                  fi
+
+                  echo "previous_exists=$PREVIOUS_EXISTS" >> $GITHUB_OUTPUT
+                  echo "::endgroup::"
+
+            - name: Compare with previous build
+              id: compare
+              if: always() && steps.download_previous.outputs.previous_exists == 'true'
+              run: |
+                  echo "::group::Compare with previous build"
+                  echo "Comparison logic would go here"
+                  echo "::endgroup::"
+
+            - name: Create build time summary
+              if: always()
+              run: |
+                  echo "::group::Build Time Summary"
+
+                  sudo apt-get update && sudo apt-get install -y jq bc
+
+                  RESTORE_TIME=${{ steps.restore.outputs.restore_duration }}
+                  BUILD_TIME=${{ steps.build.outputs.build_duration }}
+                  TOTAL_TIME=$(echo "$RESTORE_TIME + $BUILD_TIME" | bc)
+
+                  # Generate build time summary
+                  {
+                    echo "# ⏱️ Build Time Report"
+                    echo ""
+                    echo "## Summary"
+                    echo ""
+                    echo "| Step | Duration |"
+                    echo "|------|----------|"
+                    echo "| Restore | \`$(printf '%.2f' $RESTORE_TIME)s\` |"
+                    echo "| Build | \`$(printf '%.2f' $BUILD_TIME)s\` |"
+                    echo "| **Total** | **\`$(printf '%.2f' $TOTAL_TIME)s\`** |"
+                    echo ""
+                    
+                    # Add project times table if available
+                    if [ -f project-times.json ]; then
+                      PROJECT_COUNT=$(jq '.projects | length' project-times.json)
+                      if [ "$PROJECT_COUNT" -gt 0 ]; then
+                        echo "## Project Build Times (Top 20)"
+                        echo ""
+                        echo "| Project | Duration |"
+                        echo "|---------|----------|"
+                        jq -r '.projects | sort_by(.duration_seconds) | reverse | .[0:20] | .[] | "| \(.name) | \(.duration_formatted) |"' project-times.json
+                        echo ""
+                      fi
+                    fi
+                    
+                    echo "## Details"
+                    echo ""
+                    echo "- **Workflow Run**: #${{ github.run_number }}"
+                    echo "- **Commit**: \`${{ github.sha }}\`"
+                    echo "- **Branch**: \`${{ github.ref_name }}\`"
+                    echo "- **Triggered by**: \`${{ github.event_name }}\`"
+                    echo "- **Status**: \`${{ job.status }}\`"
+                    echo ""
+                    echo "## Build Configuration"
+                    echo ""
+                    echo "- Configuration: \`Release\`"
+                    echo "- .NET Version: \`10.0.x\`"
+                    echo "- Runner: \`ubuntu-latest\`"
+                    echo ""
+                    echo "---"
+                    echo ""
+                    echo "*Report generated at $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)*"
+                  } >> $GITHUB_STEP_SUMMARY
+
+                  echo "::endgroup::"
+
+            - name: Upload build time report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-time-report-${{ github.run_number }}
+                  path: |
+                      build-time-report.json
+                      project-times.json
+                  retention-days: 90
+                  if-no-files-found: ignore
+
+            - name: Upload build log
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-log-${{ github.run_number }}
+                  path: build.binlog
+                  retention-days: 30
+                  if-no-files-found: ignore
