@@ -1,11 +1,17 @@
-name: Build Time Tracking
+# DEPRECATED: This workflow has been replaced by:
+# - Build time tracking is now integrated into master_stingy.yml
+# - README updates are handled by update-readme-stats.yml
+# This workflow is kept for reference but disabled.
+
+name: Build Time Tracking (Deprecated)
 
 on:
-  push:
-    branches: [master, main, develop]
-  pull_request:
-    branches: [master, main, develop]
-  workflow_dispatch:
+  # Disabled - workflow replaced by integrated solution
+  # push:
+  #   branches: [master, main, develop]
+  # pull_request:
+  #   branches: [master, main, develop]
+  workflow_dispatch: # Kept for manual runs if needed
 
 jobs:
   track-build-time:
