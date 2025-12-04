@@ -11,21 +11,21 @@ namespace UserProfiles.Core.Repositories;
 
 public class UserProfileRepository : IUserProfileRepository
 {
-    private readonly IDbConnectionStringFactory _stringFactory;
+    private readonly IDbConnectionFactory _factory;
 
-    public UserProfileRepository(IDbConnectionStringFactory stringFactory)
+    public UserProfileRepository(IDbConnectionFactory factory)
     {
-        _stringFactory = stringFactory;
+        _factory = factory;
     }
 
     public async Task<UserProfile?> GetByUserIdAsync(UserId userId)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
                            SELECT UserId, DisplayName, ProfileImageUrl, Bio, TimeZone, Visibility, 
                                   CreatedAt, LastModifiedAt
-                           FROM [dbo].[UserProfiles]
+                           FROM [UserProfiles].[UserProfiles]
                            WHERE UserId = @UserId
                            """;
 
@@ -35,12 +35,12 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task<UserProfile?> GetByDisplayNameAsync(DisplayName displayName)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
                            SELECT UserId, DisplayName, ProfileImageUrl, Bio, TimeZone, Visibility, 
                                   CreatedAt, LastModifiedAt
-                           FROM [dbo].[UserProfiles]
+                           FROM [UserProfiles].[UserProfiles]
                            WHERE DisplayName = @DisplayName
                            """;
 
@@ -50,11 +50,11 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task<bool> ExistsAsync(UserId userId)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
                            SELECT 1
-                           FROM [dbo].[UserProfiles]
+                           FROM [UserProfiles].[UserProfiles]
                            WHERE UserId = @UserId
                            """;
 
@@ -64,7 +64,7 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task<bool> IsDisplayNameTakenAsync(DisplayName displayName, UserId? excludeUserId = null)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         string sql;
         object parameters;
@@ -73,7 +73,7 @@ public class UserProfileRepository : IUserProfileRepository
         {
             sql = """
                   SELECT 1
-                  FROM [dbo].[UserProfiles]
+                  FROM [UserProfiles].[UserProfiles]
                   WHERE DisplayName = @DisplayName AND UserId != @ExcludeUserId
                   """;
             parameters = new { DisplayName = displayName.Value, ExcludeUserId = excludeUserId.Value };
@@ -82,7 +82,7 @@ public class UserProfileRepository : IUserProfileRepository
         {
             sql = """
                   SELECT 1
-                  FROM [dbo].[UserProfiles]
+                  FROM [UserProfiles].[UserProfiles]
                   WHERE DisplayName = @DisplayName
                   """;
             parameters = new { DisplayName = displayName.Value };
@@ -94,10 +94,10 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task SaveAsync(UserProfile userProfile)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
-                           INSERT INTO [dbo].[UserProfiles] 
+                           INSERT INTO [UserProfiles].[UserProfiles] 
                            (UserId, DisplayName, ProfileImageUrl, Bio, TimeZone, Visibility, 
                             CreatedAt, LastModifiedAt)
                            VALUES 
@@ -120,10 +120,10 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task UpdateAsync(UserProfile userProfile)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
-                           UPDATE [dbo].[UserProfiles]
+                           UPDATE [UserProfiles].[UserProfiles]
                            SET DisplayName = @DisplayName,
                                ProfileImageUrl = @ProfileImageUrl,
                                Bio = @Bio,

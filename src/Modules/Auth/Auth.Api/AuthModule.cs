@@ -3,6 +3,7 @@ using Auth.Core;
 using Auth.Core.Database;
 using Auth.Core.Entities;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Auth.Api;
 
-public static class UsersModule
+public static class AuthModule
 {
     public static WebApplicationBuilder RegisterAuthModule(this WebApplicationBuilder builder)
     {
@@ -52,11 +53,13 @@ public static class UsersModule
     {
         app
             .MapGroup("api/auth/identity")
-            .MapIdentityApi<User>();
+            .MapIdentityApi<User>()
+            .WithTags("Auth");
 
         app
             .MapGroup("api/auth")
-            .MapAuthEndpoints();
+            .MapAuthEndpoints()
+            .WithTags("Auth");
 
         return app;
     }

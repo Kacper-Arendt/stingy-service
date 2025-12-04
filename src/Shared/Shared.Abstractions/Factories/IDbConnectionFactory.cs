@@ -5,7 +5,7 @@ public enum DatabaseType
     DefaultConnection
 }
 
-public interface IDbConnectionStringFactory
+public interface IDbConnectionFactory
 {
     string GetConnectionString(DatabaseType databaseType);
     string GetDefault();

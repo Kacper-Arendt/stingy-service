@@ -15,20 +15,20 @@ public static class AuthEndpoints
             IAuthService authService) =>
         {
             var createdUser = await authService.RegisterUser(registerUserDto);
-            return Results.Ok(new { Id = createdUser.UserId });
+            return TypedResults.Ok(new { Id = createdUser.UserId });
         });
 
         group.MapGet("me", async (IAuthService authService) =>
         {
             var user = await authService.GetCurrentUser();
-            return Results.Ok(user);
+            return TypedResults.Ok(user);
         })
         .RequireAuthorization();
 
         group.MapPost("logout", async (IAuthService authService) =>
         {
             await authService.Logout();
-            return Results.NoContent();
+            return TypedResults.NoContent();
         })
         .RequireAuthorization();
 

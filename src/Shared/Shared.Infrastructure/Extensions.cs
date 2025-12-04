@@ -22,7 +22,7 @@ public static class Extensions
     {
         services.AddSingleton<ErrorHandlerMiddleware>();
         services.AddSingleton<HttpContextHelper>();
-        services.AddSingleton<IDbConnectionStringFactory, DbConnectionStringFactory>();
+        services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
         services.AddSingleton<IEmailSender, AzureEmailSender>();
         services.AddSingleton<IClock, Clock>();
         

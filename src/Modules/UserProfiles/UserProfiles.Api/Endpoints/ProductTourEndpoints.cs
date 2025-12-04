@@ -20,9 +20,8 @@ public static class ProductTourEndpoints
         {
             var currentUser = ctx.GetCurrentUser();
             await productTourCommandService.SetTourStatusAsync(currentUser.Id, dto);
-            return Results.Ok(new { Message = "Tour status updated successfully" });
-        })
-        .RequireAuthorization();
+            return TypedResults.Ok(new { Message = "Tour status updated successfully" });
+        });
 
         group.MapGet("me/tours", async (
             HttpContextHelper ctx,
@@ -31,9 +30,8 @@ public static class ProductTourEndpoints
         {
             var currentUser = ctx.GetCurrentUser();
             var result = await productTourQueryService.GetAllTourStatusesAsync(currentUser.Id);
-            return Results.Ok(result);
-        })
-        .RequireAuthorization();
+            return TypedResults.Ok(result);
+        });
 
         return group;
     }

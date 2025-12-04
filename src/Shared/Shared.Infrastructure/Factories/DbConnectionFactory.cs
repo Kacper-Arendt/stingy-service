@@ -3,11 +3,11 @@ using Shared.Abstractions.Factories;
 
 namespace Shared.Infrastructure.Factories;
 
-public class DbConnectionStringFactory: IDbConnectionStringFactory
+public class DbConnectionFactory: IDbConnectionFactory
 {
     private readonly IConfiguration _configuration;
 
-    public DbConnectionStringFactory(IConfiguration configuration)
+    public DbConnectionFactory(IConfiguration configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }

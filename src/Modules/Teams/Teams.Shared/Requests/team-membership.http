@@ -1,0 +1,21 @@
+### Team Membership Query Service Usage Examples
+### This service is designed for internal use by other modules (like Retro)
+### Only contains GetMembershipAsync method
+
+@baseUrl = https://localhost:7001
+@teamId = {{$guid}}
+@userId = {{$guid}}
+
+### Get user membership details (if exposed through API)
+# GET {{baseUrl}}/api/teams/{{teamId}}/membership/{{userId}}
+
+### Usage in Retro Module:
+### You can now inject ITeamMembershipQueryService in Retro module
+### and use the method:
+### var membership = await _teamMembershipService.GetMembershipAsync(userId, teamId);
+### 
+### Check membership status:
+### if (membership == null) { /* User is not a member */ }
+### if (membership.Role == TeamParticipantRole.Owner) { /* User is owner */ }
+### if (membership.Role == TeamParticipantRole.Admin) { /* User is admin */ }
+### if (membership.Status == TeamParticipantStatus.Active) { /* User is active */ }

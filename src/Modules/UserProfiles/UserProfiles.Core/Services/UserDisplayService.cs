@@ -12,7 +12,7 @@ namespace UserProfiles.Core.Services;
 public class UserDisplayService : IUserDisplayService
 {
     private readonly IUserProfileRepository _userProfileRepository;
-    private readonly IDbConnectionStringFactory _stringFactory;
+    private readonly IDbConnectionFactory _factory;
     private static readonly MemoryCache _cache = new(new MemoryCacheOptions());
     
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
@@ -20,10 +20,10 @@ public class UserDisplayService : IUserDisplayService
 
     public UserDisplayService(
         IUserProfileRepository userProfileRepository,
-        IDbConnectionStringFactory stringFactory)
+        IDbConnectionFactory factory)
     {
         _userProfileRepository = userProfileRepository;
-        _stringFactory = stringFactory;
+        _factory = factory;
     }
 
     public async Task<UserDisplayInfoDto?> GetUserDisplayInfoAsync(UserId userId)
@@ -131,7 +131,7 @@ public class UserDisplayService : IUserDisplayService
 
     private async Task<string?> GetUserEmailFromAuth(UserId userId)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
         
         const string sql = """
                            SELECT Email 

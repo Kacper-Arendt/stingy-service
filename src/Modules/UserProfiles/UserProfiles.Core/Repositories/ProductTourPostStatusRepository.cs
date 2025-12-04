@@ -11,20 +11,20 @@ namespace UserProfiles.Core.Repositories;
 
 public class ProductTourPostStatusRepository : IProductTourPostStatusRepository
 {
-    private readonly IDbConnectionStringFactory _stringFactory;
+    private readonly IDbConnectionFactory _factory;
 
-    public ProductTourPostStatusRepository(IDbConnectionStringFactory stringFactory)
+    public ProductTourPostStatusRepository(IDbConnectionFactory factory)
     {
-        _stringFactory = stringFactory;
+        _factory = factory;
     }
 
     public async Task<ProductTourPostStatus?> GetByUserAndTourKeyAsync(UserId userId, TourKey tourKey)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
                            SELECT Id, UserId, TourKey, Status
-                           FROM [dbo].[ProductTourPostStatus]
+                           FROM [UserProfiles].[ProductTourPostStatus]
                            WHERE UserId = @UserId AND TourKey = @TourKey
                            """;
 
@@ -36,11 +36,11 @@ public class ProductTourPostStatusRepository : IProductTourPostStatusRepository
 
     public async Task<List<ProductTourPostStatus>> GetAllByUserIdAsync(UserId userId)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
                            SELECT Id, UserId, TourKey, Status
-                           FROM [dbo].[ProductTourPostStatus]
+                           FROM [UserProfiles].[ProductTourPostStatus]
                            WHERE UserId = @UserId
                            ORDER BY TourKey
                            """;
@@ -53,10 +53,10 @@ public class ProductTourPostStatusRepository : IProductTourPostStatusRepository
 
     public async Task UpsertAsync(ProductTourPostStatus tourStatus)
     {
-        await using var dbConnection = new SqlConnection(_stringFactory.GetDefault());
+        await using var dbConnection = new SqlConnection(_factory.GetDefault());
 
         const string sql = """
-                           MERGE INTO [dbo].[ProductTourPostStatus] AS target
+                           MERGE INTO [UserProfiles].[ProductTourPostStatus] AS target
                            USING (SELECT @UserId AS UserId, @TourKey AS TourKey) AS source
                            ON target.UserId = source.UserId AND target.TourKey = source.TourKey
                            WHEN MATCHED THEN

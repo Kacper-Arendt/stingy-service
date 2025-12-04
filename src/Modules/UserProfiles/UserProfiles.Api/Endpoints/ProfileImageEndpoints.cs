@@ -31,7 +31,7 @@ public static class ProfileImageEndpoints
                     image.FileName,
                     image.ContentType);
 
-                return Results.Ok(new { ImageUrl = imageUrl });
+                return TypedResults.Ok(new { ImageUrl = imageUrl });
             }
             catch (ArgumentException ex)
             {
@@ -42,8 +42,7 @@ public static class ProfileImageEndpoints
                 SentrySdk.CaptureException(ex);
                 return Results.StatusCode(500);
             }
-        })
-        .RequireAuthorization();
+        });
 
         group.MapDelete("me/image", async ([FromBody] string imageUrl, IProfileImageService profileImageService) =>
         {
@@ -53,15 +52,14 @@ public static class ProfileImageEndpoints
             try
             {
                 await profileImageService.DeleteProfileImageAsync(imageUrl);
-                return Results.NoContent();
+                return TypedResults.NoContent();
             }
             catch (Exception ex)
             {
                 SentrySdk.CaptureException(ex);
                 return Results.StatusCode(500);
             }
-        })
-        .RequireAuthorization();
+        });
 
         return group;
     }

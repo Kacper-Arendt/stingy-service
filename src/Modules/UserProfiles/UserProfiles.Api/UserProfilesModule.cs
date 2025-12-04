@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using UserProfiles.Api.Endpoints;
 using UserProfiles.Core;
 
@@ -15,9 +16,14 @@ public static class UserProfilesModule
 
     public static WebApplication UseUserProfilesModule(this WebApplication app)
     {
-        var profilesGroup = app.MapGroup("api/profiles");
-        profilesGroup.MapProductTourEndpoints();
-        profilesGroup.MapProfileImageEndpoints();
+        app.MapGroup("api/profiles")
+            .MapUserProfilesEndpoints()
+            .MapProductTourEndpoints()
+            .MapProfileImageEndpoints()
+            .MapPublicProfilesEndpoints()
+            .RequireAuthorization()
+            .WithTags("UserProfiles");
+        
         return app;
     }
 }

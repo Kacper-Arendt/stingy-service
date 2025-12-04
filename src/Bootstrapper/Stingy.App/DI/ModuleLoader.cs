@@ -1,5 +1,7 @@
 using Auth.Api;
 using Shared.Infrastructure;
+using Teams.Api;
+using Teams.Shared;
 using UserProfiles.Api;
 
 namespace Stingy.App.DI;
@@ -10,9 +12,8 @@ public static class ModuleLoader
     {
         builder.Services.AddInfrastructure(builder.Configuration);
         builder.RegisterAuthModule();
-        // builder.RegisterRetroModule();
-        // builder.RegisterTeamsSharedModule();
-        // builder.RegisterTeamsModule();
+        builder.RegisterTeamsSharedModule();
+        builder.RegisterTeamsModule();
         builder.RegisterUserProfilesModule();
 
         // builder.Services.AddControllers()
@@ -28,8 +29,7 @@ public static class ModuleLoader
     {
         app.UseInfrastructure();
         app.UseAuthModule();
-        // app.UseRetroModule();
-        // app.UseTeamsModule();
+        app.UseTeamsModule();
         app.UseUserProfilesModule();
 
         return app;

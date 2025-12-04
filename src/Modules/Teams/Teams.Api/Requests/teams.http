@@ -1,0 +1,69 @@
+@baseUrl = http://localhost:5145
+@teamId = 81796c4a-14b0-4513-80dc-e49741a1617f
+@userId = 550e8400-e29b-41d4-a716-446655440000
+
+### Create Team
+POST {{baseUrl}}/api/teams
+Content-Type: application/json
+
+{
+  "name": "Development Team",
+  "description": "Team for software development projects"
+}
+
+### Get User Teams (with member count, retro count, last retro date, and user role)
+GET {{baseUrl}}/api/teams
+
+### Get Team Details (with user role)
+GET {{baseUrl}}/api/teams/{{teamId}}
+
+### Update Team
+PUT {{baseUrl}}/api/teams/{{teamId}}
+Content-Type: application/json
+
+{
+  "name": "Updated Development Team",
+  "description": "Updated description for the development team"
+}
+
+### Get Team Participants
+GET {{baseUrl}}/api/teams/{{teamId}}/participants
+
+### Add Team Participant
+POST {{baseUrl}}/api/teams/{{teamId}}/participants
+Content-Type: application/json
+
+{
+  "email": "newmember@example.com",
+  "role": 2
+}
+
+### Remove Team Participant
+DELETE {{baseUrl}}/api/teams/{{teamId}}/participants/{{userId}}
+
+### Get current user's team invitations (can be accepted)
+GET {{baseUrl}}/api/teams/invitations
+
+### Accept invitation to team as current user
+POST {{baseUrl}}/api/teams/{{teamId}}/invitations/accept
+
+### Deny invitation to team as current user
+POST {{baseUrl}}/api/teams/{{teamId}}/invitations/deny
+
+### Get Recent Retros for Team
+GET {{baseUrl}}/api/teams/{{teamId}}/retros/recent
+
+### Get Recent Retros for Team (with limit)
+GET {{baseUrl}}/api/teams/{{teamId}}/retros/recent?limit=3
+
+### Create Retro from Team
+POST {{baseUrl}}/api/teams/{{teamId}}/retros
+Content-Type: application/json
+
+{
+  "title": "Sprint Retrospective",
+  "revealAt": "2025-01-20T10:00:00Z"
+}
+
+### Delete Team
+DELETE {{baseUrl}}/api/teams/{{teamId}} 
