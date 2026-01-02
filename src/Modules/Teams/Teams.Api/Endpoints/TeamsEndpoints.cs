@@ -26,7 +26,7 @@ public static class TeamsEndpoints
             var result = await teamQueryService.GetUserTeamsAsync();
             return TypedResults.Ok(result);
         });
-
+        // TODO move to invitations endpoints
         group.MapPost("{teamId:guid}/invitations/accept", async (
             Guid teamId,
             ITeamCommandService teamCommandService) =>
