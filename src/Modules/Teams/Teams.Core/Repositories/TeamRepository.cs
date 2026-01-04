@@ -6,7 +6,6 @@ using Teams.Domain.Enums;
 using Teams.Domain.ValueObjects;
 using Shared.Abstractions.Factories;
 using Shared.Abstractions.ValueObjects;
-using Retro.Domain.ValueObjects;
 
 namespace Teams.Core.Repositories;
 
@@ -356,68 +355,6 @@ public class TeamRepository : ITeamRepository
         return results.ToDictionary(
             r => new TeamId(r.TeamId),
             r => r.MemberCount
-        );
-    }
-
-    public async Task<Dictionary<TeamId, int>> GetRetroCountsAsync(List<TeamId> teamIds)
-    {
-        if (!teamIds.Any()) return new Dictionary<TeamId, int>();
-
-        await using var dbConnection = new SqlConnection(_factory.GetDefault());
-
-        var teamGuids = teamIds.Select(id => id.Value).ToList();
-        var inClause = string.Join(",", teamGuids.Select((_, i) => $"@teamId{i}"));
-
-        var sql = $"""
-                   SELECT TeamId, COUNT(*) as RetroCount
-                   FROM [Retrospective].[Retrospectives]
-                   WHERE TeamId IN ({inClause}) AND TeamId IS NOT NULL
-                   GROUP BY TeamId
-                   """;
-
-        var parameters = new DynamicParameters();
-
-        for (int i = 0; i < teamGuids.Count; i++)
-        {
-            parameters.Add($"@teamId{i}", teamGuids[i]);
-        }
-
-        var results = await dbConnection.QueryAsync<TeamStatsDbRow>(sql, parameters);
-
-        return results.ToDictionary(
-            r => new TeamId(r.TeamId),
-            r => r.RetroCount
-        );
-    }
-
-    public async Task<Dictionary<TeamId, DateTime?>> GetLastRetroDateAsync(List<TeamId> teamIds)
-    {
-        if (!teamIds.Any()) return new Dictionary<TeamId, DateTime?>();
-
-        await using var dbConnection = new SqlConnection(_factory.GetDefault());
-
-        var teamGuids = teamIds.Select(id => id.Value).ToList();
-        var inClause = string.Join(",", teamGuids.Select((_, i) => $"@teamId{i}"));
-
-        var sql = $"""
-                   SELECT TeamId, MAX(CreatedAt) as LastRetroDate
-                   FROM [Retrospective].[Retrospectives]
-                   WHERE TeamId IN ({inClause}) AND TeamId IS NOT NULL
-                   GROUP BY TeamId
-                   """;
-
-        var parameters = new DynamicParameters();
-
-        for (int i = 0; i < teamGuids.Count; i++)
-        {
-            parameters.Add($"@teamId{i}", teamGuids[i]);
-        }
-
-        var results = await dbConnection.QueryAsync<TeamStatsDbRow>(sql, parameters);
-
-        return results.ToDictionary(
-            r => new TeamId(r.TeamId),
-            r => r.LastRetroDate
         );
     }
 

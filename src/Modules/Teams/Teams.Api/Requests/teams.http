@@ -11,7 +11,7 @@ Content-Type: application/json
   "description": "Team for software development projects"
 }
 
-### Get User Teams (with member count, retro count, last retro date, and user role)
+###
 GET {{baseUrl}}/api/teams
 
 ### Get Team Details (with user role)
@@ -49,21 +49,6 @@ POST {{baseUrl}}/api/teams/{{teamId}}/invitations/accept
 
 ### Deny invitation to team as current user
 POST {{baseUrl}}/api/teams/{{teamId}}/invitations/deny
-
-### Get Recent Retros for Team
-GET {{baseUrl}}/api/teams/{{teamId}}/retros/recent
-
-### Get Recent Retros for Team (with limit)
-GET {{baseUrl}}/api/teams/{{teamId}}/retros/recent?limit=3
-
-### Create Retro from Team
-POST {{baseUrl}}/api/teams/{{teamId}}/retros
-Content-Type: application/json
-
-{
-  "title": "Sprint Retrospective",
-  "revealAt": "2025-01-20T10:00:00Z"
-}
 
 ### Delete Team
 DELETE {{baseUrl}}/api/teams/{{teamId}} 

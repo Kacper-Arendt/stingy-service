@@ -13,9 +13,7 @@ public interface ITeamPermissionService
     bool CanViewTeam(UserId userId, Team team);
     bool CanRemoveParticipant(UserId currentUserId, Team team, UserId targetUserId);
     
-    // New methods for DTO generation
     TeamPermissions GetUserPermissions(UserId userId, Team team);
-    bool CanCreateRetro(UserId userId, Team team);
     bool CanChangeUserRoles(UserId userId, Team team);
     bool CanInviteUsers(UserId userId, Team team);
 } 

@@ -12,6 +12,7 @@ public class TeamParticipantInvitedEventHandler : IEventHandler<TeamParticipantI
         _emailSender = emailSender;
     }
 
+    // todo change app name, move to appsettings
     public async Task HandleAsync(TeamParticipantInvitedEvent @event)
     {
         var body = $"""

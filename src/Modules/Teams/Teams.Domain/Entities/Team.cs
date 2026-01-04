@@ -2,7 +2,6 @@ using Teams.Domain.Enums;
 using Teams.Domain.ValueObjects;
 using Shared.Abstractions.Exceptions;
 using Shared.Abstractions.ValueObjects;
-using Retro.Domain.ValueObjects;
 
 namespace Teams.Domain.Entities;
 
