@@ -74,19 +74,11 @@ public class TeamPermissionService : ITeamPermissionService
             CanDeleteTeam = CanDeleteTeam(userId, team),
             CanManageParticipants = CanManageParticipants(userId, team),
             CanChangeUserRoles = CanChangeUserRoles(userId, team),
-            CanCreateRetro = CanCreateRetro(userId, team),
             CanInviteUsers = CanInviteUsers(userId, team)
         };
 
         PermissionsCache.Set(cacheKey, permissions, CacheDuration);
         return permissions;
-    }
-
-    public bool CanCreateRetro(UserId userId, Team team)
-    {
-        // Only team admins (Admins and Owners) can create retrospectives
-        if (!team.IsParticipant(userId)) return false;
-        return team.IsAdmin(userId);
     }
 
     public bool CanChangeUserRoles(UserId userId, Team team)

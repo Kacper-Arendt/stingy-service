@@ -63,15 +63,11 @@ public class TeamQueryService : ITeamQueryService
 
         var teamIds = teams.Select(t => t.Id).ToList();
         var memberCounts = await _teamRepository.GetMemberCountsAsync(teamIds);
-        var retroCounts = await _teamRepository.GetRetroCountsAsync(teamIds);
-        var lastRetroDates = await _teamRepository.GetLastRetroDateAsync(teamIds);
         var userRoles = await _teamRepository.GetUserRolesAsync(teamIds, user.Id);
 
         return teams.Select(team => TeamDto.FromDomain(
             team,
             memberCounts.GetValueOrDefault(team.Id, 0),
-            retroCounts.GetValueOrDefault(team.Id, 0),
-            lastRetroDates.GetValueOrDefault(team.Id, null),
             userRoles.GetValueOrDefault(team.Id, "Unknown")
         )).ToList();
     }

@@ -16,12 +16,6 @@ public static class ModuleLoader
         builder.RegisterTeamsModule();
         builder.RegisterUserProfilesModule();
 
-        // builder.Services.AddControllers()
-            // .AddApplicationPart(typeof(PermissionController).Assembly)
-            // .AddApplicationPart(typeof(TeamsController).Assembly)
-            // .AddApplicationPart(typeof(TeamRetroController).Assembly)
-            // .AddApplicationPart(typeof(UserProfilesController).Assembly);
-
         return builder;
     }
 

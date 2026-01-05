@@ -9,7 +9,8 @@ public class ProfileImageService : IProfileImageService
     private readonly IBlobStorageService _blobStorageService;
     private readonly ILogger<ProfileImageService> _logger;
     
-    private const string ContainerName = "retrospectacle-profile-images";
+    // todo add app name from appsettings
+    private const string ContainerName = "stingy-profile-images";
     private const int MaxFileSizeBytes = 5 * 1024 * 1024; // 5MB
     private static readonly string[] AllowedContentTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
 

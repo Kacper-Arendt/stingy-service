@@ -27,10 +27,10 @@ public static class AuthModule
                 options.SignIn.RequireConfirmedEmail = false;
                 options.User.RequireUniqueEmail = false;
                 options.Password.RequiredLength = 6;
-                options.Password.RequireDigit = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireDigit = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromHours(2);
             })

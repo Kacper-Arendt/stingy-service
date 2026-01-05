@@ -11,7 +11,6 @@ using Shared.Abstractions.ValueObjects;
 using Shared.Abstractions.Services;
 using Shared.Abstractions.Events;
 using Shared.Infrastructure.Helpers;
-using Retro.Domain.ValueObjects;
 
 namespace Teams.Core.Commands;
 

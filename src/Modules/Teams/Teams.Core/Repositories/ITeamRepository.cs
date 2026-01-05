@@ -19,8 +19,6 @@ public interface ITeamRepository
     Task AcceptInvitationAsync(TeamId teamId, UserId userId, Email email);
     Task DenyInvitationAsync(TeamId teamId, Email email);
     Task<Dictionary<TeamId, int>> GetMemberCountsAsync(List<TeamId> teamIds);
-    Task<Dictionary<TeamId, int>> GetRetroCountsAsync(List<TeamId> teamIds); // todo: remove
-    Task<Dictionary<TeamId, DateTime?>> GetLastRetroDateAsync(List<TeamId> teamIds); // todo: remove
     Task<Dictionary<TeamId, string>> GetUserRolesAsync(List<TeamId> teamIds, UserId userId);
     Task<string> GetUserRoleAsync(TeamId teamId, UserId userId);
 } 

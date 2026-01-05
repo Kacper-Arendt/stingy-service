@@ -9,8 +9,6 @@ public record TeamDto(
     DateTime CreatedAt,
     Guid CreatedBy,
     int MemberCount,
-    int RetroCount,
-    DateTime? LastRetroDate,
     string UserRole)
 {
     public static TeamDto FromDomain(Team team)
@@ -21,14 +19,12 @@ public record TeamDto(
             team.Description.Value,
             team.CreatedAt.Value,
             team.CreatedBy.Value,
-            0, // Will be populated by repository
-            0, // Will be populated by repository
-            null, // Will be populated by repository
-            string.Empty // Will be populated by repository
+            0,
+            string.Empty 
         );
     }
 
-    public static TeamDto FromDomain(Team team, int memberCount, int retroCount, DateTime? lastRetroDate,
+    public static TeamDto FromDomain(Team team, int memberCount,
         string userRole)
     {
         return new TeamDto(
@@ -38,8 +34,6 @@ public record TeamDto(
             team.CreatedAt.Value,
             team.CreatedBy.Value,
             memberCount,
-            retroCount,
-            lastRetroDate,
             userRole
         );
     }

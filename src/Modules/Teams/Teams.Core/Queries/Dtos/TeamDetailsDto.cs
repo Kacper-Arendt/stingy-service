@@ -10,8 +10,7 @@ public record TeamDetailsDto(
     Guid CreatedBy,
     List<TeamParticipantDto> Participants,
     string UserRole,
-    TeamPermissions Permissions,
-    List<TeamRecentRetroDto> RecentRetros)
+    TeamPermissions Permissions)
 {
     public static TeamDetailsDto FromDomain(Team team, string userRole, TeamPermissions permissions, List<TeamParticipantDto> participants)
     {
@@ -23,23 +22,6 @@ public record TeamDetailsDto(
             team.CreatedBy.Value,
             participants,
             userRole,
-            permissions,
-            new List<TeamRecentRetroDto>() // Will be populated by repository
-        );
-    }
-
-    public static TeamDetailsDto FromDomain(Team team, string userRole, TeamPermissions permissions, List<TeamParticipantDto> participants, List<TeamRecentRetroDto> recentRetros)
-    {
-        return new TeamDetailsDto(
-            team.Id.Value,
-            team.Name.Value,
-            team.Description.Value,
-            team.CreatedAt.Value,
-            team.CreatedBy.Value,
-            participants,
-            userRole,
-            permissions,
-            recentRetros
-        );
+            permissions);
     }
 } 

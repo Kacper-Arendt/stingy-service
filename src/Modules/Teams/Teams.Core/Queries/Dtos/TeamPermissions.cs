@@ -6,6 +6,5 @@ public class TeamPermissions
     public bool CanDeleteTeam { get; set; }
     public bool CanManageParticipants { get; set; }
     public bool CanChangeUserRoles { get; set; }
-    public bool CanCreateRetro { get; set; }
     public bool CanInviteUsers { get; set; }
 } 
