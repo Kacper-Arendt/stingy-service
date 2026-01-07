@@ -1,5 +1,6 @@
 using Budgets.Core.Queries.Dtos;
 using Budgets.Core.Repositories;
+using Budgets.Domain.Enums;
 using Budgets.Domain.ValueObjects;
 using Shared.Abstractions.ValueObjects;
 using Shared.Infrastructure.Helpers;
@@ -32,10 +33,10 @@ public class BudgetQueryService : IBudgetQueryService
         return BudgetDto.FromDomain(budget);
     }
 
-    public async Task<List<BudgetDto>> GetUserBudgetsAsync()
+    public async Task<List<BudgetDto>> GetUserBudgetsAsync(BudgetFilter filter = BudgetFilter.Active)
     {
         var user = _httpContextHelper.GetCurrentUser();
-        var budgets = await _budgetRepository.GetByUserIdAsync(user.Id);
+        var budgets = await _budgetRepository.GetByUserIdAsync(user.Id, filter);
 
         return budgets.Select(BudgetDto.FromDomain).ToList();
     }

@@ -24,7 +24,7 @@ public class BudgetRepository : IBudgetRepository
         await dbConnection.OpenAsync();
 
         const string budgetSql = """
-                                 SELECT Id, Name, Description, CreatedAt
+                                 SELECT Id, Name, Description, CreatedAt, IsArchived
                                  FROM [Budgets].[Budgets]
                                  WHERE Id = @BudgetId
                                  """;
@@ -54,6 +54,7 @@ public class BudgetRepository : IBudgetRepository
             .WithName(new BudgetName(budgetRow.Name))
             .WithDescription(new BudgetDescription(budgetRow.Description ?? string.Empty))
             .WithCreatedAt(new CreatedAtDate(budgetRow.CreatedAt))
+            .WithIsArchived(budgetRow.IsArchived)
             .Build();
 
         // Add members directly to the list to avoid validation errors
@@ -65,18 +66,26 @@ public class BudgetRepository : IBudgetRepository
         return budget;
     }
 
-    public async Task<List<Budget>> GetByUserIdAsync(UserId userId)
+    public async Task<List<Budget>> GetByUserIdAsync(UserId userId, BudgetFilter filter = BudgetFilter.Active)
     {
         await using var dbConnection = new SqlConnection(_factory.GetDefault());
         await dbConnection.OpenAsync();
 
-        const string sql = """
-                           SELECT DISTINCT b.Id, b.Name, b.Description, b.CreatedAt
-                           FROM [Budgets].[Budgets] b
-                           INNER JOIN [Budgets].[BudgetMembers] bm ON b.Id = bm.BudgetId
-                           WHERE bm.UserId = @UserId AND bm.Status = @ActiveStatus
-                           ORDER BY b.CreatedAt DESC
-                           """;
+        var whereClause = filter switch
+        {
+            BudgetFilter.Active => "bm.UserId = @UserId AND bm.Status = @ActiveStatus AND b.IsArchived = 0",
+            BudgetFilter.Archived => "bm.UserId = @UserId AND bm.Status = @ActiveStatus AND b.IsArchived = 1",
+            BudgetFilter.All => "bm.UserId = @UserId AND bm.Status = @ActiveStatus",
+            _ => "bm.UserId = @UserId AND bm.Status = @ActiveStatus AND b.IsArchived = 0"
+        };
+
+        var sql = $"""
+                   SELECT DISTINCT b.Id, b.Name, b.Description, b.CreatedAt, b.IsArchived
+                   FROM [Budgets].[Budgets] b
+                   INNER JOIN [Budgets].[BudgetMembers] bm ON b.Id = bm.BudgetId
+                   WHERE {whereClause}
+                   ORDER BY b.CreatedAt DESC
+                   """;
 
         var budgetRows = await dbConnection.QueryAsync<BudgetDbRow>(sql, new
         {
@@ -102,8 +111,8 @@ public class BudgetRepository : IBudgetRepository
         await using var transaction = dbConnection.BeginTransaction();
 
         const string budgetSql = """
-                                 INSERT INTO [Budgets].[Budgets] (Id, Name, Description, CreatedAt)
-                                 VALUES (@Id, @Name, @Description, @CreatedAt)
+                                 INSERT INTO [Budgets].[Budgets] (Id, Name, Description, CreatedAt, IsArchived)
+                                 VALUES (@Id, @Name, @Description, @CreatedAt, @IsArchived)
                                  """;
 
         await dbConnection.ExecuteAsync(budgetSql, new
@@ -111,7 +120,8 @@ public class BudgetRepository : IBudgetRepository
             Id = budget.Id.Value,
             Name = budget.Name.Value,
             Description = budget.Description.Value,
-            CreatedAt = budget.CreatedAt.Value
+            CreatedAt = budget.CreatedAt.Value,
+            IsArchived = budget.IsArchived
         }, transaction);
 
         if (budget.Members.Any())

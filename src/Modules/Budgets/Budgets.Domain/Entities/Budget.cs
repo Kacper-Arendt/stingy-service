@@ -11,6 +11,7 @@ public class Budget
     public BudgetName Name { get; private set; } = null!;
     public BudgetDescription Description { get; private set; } = null!;
     public CreatedAtDate CreatedAt { get; private set; } = null!;
+    public bool IsArchived { get; private set; }
     public List<BudgetMember> Members { get; private set; } = [];
 
     private Budget()
@@ -55,6 +56,16 @@ public class Budget
                                 m.Status == BudgetMemberStatus.Active);
     }
 
+    public void Archive()
+    {
+        IsArchived = true;
+    }
+
+    public void Unarchive()
+    {
+        IsArchived = false;
+    }
+
     #region Builder
 
     public class BudgetBuilder
@@ -63,6 +74,7 @@ public class Budget
         private BudgetName _name = null!;
         private BudgetDescription _description = new BudgetDescription(string.Empty);
         private CreatedAtDate _createdAt = new CreatedAtDate(DateTime.UtcNow);
+        private bool _isArchived = false;
 
         public BudgetBuilder WithId(BudgetId id)
         {
@@ -88,6 +100,12 @@ public class Budget
             return this;
         }
 
+        public BudgetBuilder WithIsArchived(bool isArchived)
+        {
+            _isArchived = isArchived;
+            return this;
+        }
+
         public Budget Build()
         {
             if (_id == null) throw new DomainModelArgumentException("BudgetId is required.");
@@ -98,7 +116,8 @@ public class Budget
                 Id = _id,
                 Name = _name,
                 Description = _description,
-                CreatedAt = _createdAt
+                CreatedAt = _createdAt,
+                IsArchived = _isArchived
             };
         }
     }
