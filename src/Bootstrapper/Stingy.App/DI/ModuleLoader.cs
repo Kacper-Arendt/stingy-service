@@ -1,4 +1,5 @@
 using Auth.Api;
+using Budgets.Api;
 using Shared.Infrastructure;
 using Teams.Api;
 using Teams.Shared;
@@ -15,6 +16,7 @@ public static class ModuleLoader
         builder.RegisterTeamsSharedModule();
         builder.RegisterTeamsModule();
         builder.RegisterUserProfilesModule();
+        builder.RegisterBudgetsModule();
 
         return builder;
     }
@@ -25,6 +27,7 @@ public static class ModuleLoader
         app.UseAuthModule();
         app.UseTeamsModule();
         app.UseUserProfilesModule();
+        app.UseBudgetsModule();
 
         return app;
     }

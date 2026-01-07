@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\Auth\Auth.Api\Auth.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Budgets\Budgets.Api\Budgets.Api.csproj" />
     <ProjectReference Include="..\..\Modules\Teams\Teams.Api\Teams.Api.csproj" />
     <ProjectReference Include="..\..\Modules\Teams\Teams.Shared\Teams.Shared.csproj" />
     <ProjectReference Include="..\..\Modules\UserProfiles\UserProfiles.Api\UserProfiles.Api.csproj" />
