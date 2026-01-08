@@ -27,6 +27,7 @@ public static class BudgetsModule
         app.MapGroup("api/budgets")
             .RequireAuthorization()
             .MapBudgetsEndpoints()
+            .MapBudgetYearsEndpoints()
             .WithTags("Budgets");
         
         return app;

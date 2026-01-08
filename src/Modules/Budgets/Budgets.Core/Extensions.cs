@@ -13,12 +13,15 @@ public static class Extensions
     {
         // Command Services
         services.AddScoped<IBudgetCommandService, BudgetCommandService>();
+        services.AddScoped<IYearCommandService, YearCommandService>();
 
         // Query Services
         services.AddScoped<IBudgetQueryService, BudgetQueryService>();
+        services.AddScoped<IYearQueryService, YearQueryService>();
 
         // Repositories
         services.AddScoped<IBudgetRepository, BudgetRepository>();
+        services.AddScoped<IYearRepository, YearRepository>();
 
         // Authorization Handlers
         services.AddScoped<IAuthorizationHandler, HasAccessToBudgetHandler>();

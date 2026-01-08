@@ -24,10 +24,9 @@ public static class BudgetsEndpoints
 
         group.MapGet("", async (
             IBudgetQueryService queryService,
-            [AsParameters] GetBudgetsQuery query) =>
+            BudgetFilter status = BudgetFilter.All) =>
         {
-            var filter = ParseBudgetFilter(query.Status);
-            var result = await queryService.GetUserBudgetsAsync(filter);
+            var result = await queryService.GetUserBudgetsAsync(status);
             return TypedResults.Ok(result);
         });
 
@@ -50,20 +49,4 @@ public static class BudgetsEndpoints
 
         return group;
     }
-
-    private static BudgetFilter ParseBudgetFilter(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-            return BudgetFilter.Active;
-
-        return status.ToLowerInvariant() switch
-        {
-            "all" => BudgetFilter.All,
-            "archived" => BudgetFilter.Archived,
-            "active" => BudgetFilter.Active,
-            _ => BudgetFilter.Active
-        };
-    }
-
-    public record GetBudgetsQuery(string? Status = null);
 }
